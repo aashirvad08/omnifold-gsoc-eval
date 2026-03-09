@@ -1,0 +1,115 @@
+schema_version: "1.1.0"
+schema_name: "omnifold_weight_file_metadata"
+project: "OmniFold Publication Tools"
+
+files:
+  - name: "multifold.h5"
+    path: "data/multifold.h5"
+    event_count: 418014
+    approx_weight_columns: 175
+    weight_families_present:
+      - "weight_mc"
+      - "weights_nominal"
+      - "weights_ensemble_*"
+      - "weights_bootstrap_mc_*"
+      - "weights_bootstrap_data_*"
+      - "weights_pileup"
+      - "weights_muEff*"
+      - "weights_muCal*"
+      - "weights_track*"
+      - "weights_theory*"
+      - "weights_topBackground"
+      - "weights_lumi"
+      - "weights_dd"
+
+  - name: "multifold_sherpa.h5"
+    path: "data/multifold_sherpa.h5"
+    event_count: 326430
+    approx_weight_columns: 27
+    weight_families_present:
+      - "weight_mc"
+      - "weights_nominal"
+      - "weights_bootstrap_mc_*"
+
+  - name: "multifold_nonDY.h5"
+    path: "data/multifold_nonDY.h5"
+    event_count: 433397
+    approx_weight_columns: 2
+    weight_families_present:
+      - "weight_mc"
+      - "weights_nominal"
+
+observables:
+  - "pT_ll"
+  - "pT_l1"
+  - "pT_l2"
+  - "eta_l1"
+  - "eta_l2"
+  - "phi_l1"
+  - "phi_l2"
+  - "y_ll"
+  - "pT_trackj1"
+  - "y_trackj1"
+  - "phi_trackj1"
+  - "m_trackj1"
+  - "tau1_trackj1"
+  - "tau2_trackj1"
+  - "tau3_trackj1"
+  - "pT_trackj2"
+  - "y_trackj2"
+  - "phi_trackj2"
+  - "m_trackj2"
+  - "tau1_trackj2"
+  - "tau2_trackj2"
+  - "tau3_trackj2"
+  - "Ntracks_trackj1"
+  - "Ntracks_trackj2"
+
+weights:
+  required_core:
+    - "weight_mc"
+    - "weights_nominal"
+
+  uncertainty_families:
+    - name: "ensemble"
+      pattern: "weights_ensemble_*"
+      typical_index_range: "0-99"
+      purpose: "OmniFold model/fit variation replicas"
+
+    - name: "bootstrap_mc"
+      pattern: "weights_bootstrap_mc_*"
+      typical_index_range: "0-24"
+      purpose: "Statistical uncertainty from MC resampling"
+
+    - name: "bootstrap_data"
+      pattern: "weights_bootstrap_data_*"
+      typical_index_range: "0-24"
+      purpose: "Statistical uncertainty from data resampling"
+
+  detector_theory_families:
+    - "weights_pileup"
+    - "weights_muEffReco"
+    - "weights_muEffIso"
+    - "weights_muEffTrack"
+    - "weights_muEffTrig"
+    - "weights_muCalID"
+    - "weights_muCalMS"
+    - "weights_muCalResBias"
+    - "weights_muCalScale"
+    - "weights_trackEffMain"
+    - "weights_trackEffJet"
+    - "weights_trackFake"
+    - "weights_trackPtScale"
+    - "weights_theoryPSjet"
+    - "weights_theoryPSsoft"
+    - "weights_theoryMPI"
+    - "weights_theoryPSscale"
+    - "weights_theoryAlphaS"
+    - "weights_theoryQCD"
+    - "weights_theoryPDF"
+    - "weights_topBackground"
+    - "weights_lumi"
+
+notes:
+  - "Weight availability is asymmetric across files; uncertainty workflows should be validated per file."
+  - "`target_dd` appears in multifold.h5 and likely encodes a data-driven training target; semantics should be documented separately."
