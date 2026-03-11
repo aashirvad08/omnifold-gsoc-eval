@@ -40,6 +40,23 @@ def test_weighted_sum_conservation_for_event_yields():
     assert np.isclose(np.sum(result["hist"]), np.sum(weights))
 
 
+def test_density_integrates_to_one():
+    """Density mode should integrate to 1 for normalized probability-like views."""
+    values = np.array([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    weights = np.ones_like(values)
+    edges = np.array([0.0, 0.5, 1.0])
+
+    result = compute_weighted_histogram(
+        values=values,
+        weights=weights,
+        bins=edges,
+        density=True,
+    )
+
+    integral = np.sum(result["hist"] * np.diff(result["edges"]))
+    assert np.isclose(integral, 1.0, rtol=1e-12, atol=1e-12)
+
+
 def test_nan_and_inf_entries_are_filtered():
     """HEP ntuples often contain bad entries; they should be safely ignored."""
     values = np.array([0.1, 0.3, np.nan, 0.7, 0.9])
@@ -125,4 +142,22 @@ def test_plot_weighted_histogram_returns_plot_and_arrays():
     assert edges.shape == (3,)
     assert uncertainty.shape == (2,)
     assert len(ax.patches) >= 1
+    fig.clf()
+
+
+def test_plot_weighted_histogram_density_mode_runs():
+    """Exercise plotting density path to prevent regressions in normalized views."""
+    values = np.array([0.1, 0.2, 0.4, 0.5, 0.9, 1.1])
+    weights = np.ones_like(values)
+
+    fig, ax, hist, edges, uncertainty = plot_weighted_histogram(
+        values=values,
+        weights=weights,
+        bins=5,
+        density=True,
+    )
+
+    assert fig is ax.figure
+    assert hist.size == edges.size - 1
+    assert uncertainty.size == hist.size
     fig.clf()

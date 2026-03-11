@@ -30,6 +30,9 @@ The goal is to make event-level OmniFold outputs easier to validate, compare, an
 python3 -m pip install -r requirements.txt
 ```
 
+The pinned minimum version constraints in `requirements.txt` improve
+reproducibility across reviewer environments.
+
 ## Run Code
 
 Example weighted histogram workflow:

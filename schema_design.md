@@ -46,6 +46,12 @@ Included metadata:
 - weight families needed for nominal and uncertainty computations,
 - explicit placeholders where information is currently unknown.
 
+In particular, `normalization` and `event_selection` are intentionally marked as
+`unknown` in `metadata.yaml` because those details are not present in the
+provided HDF5 files. Recording this absence is still useful: it tells
+downstream users exactly which external documentation is required before a
+fully reproducible physics result can be claimed.
+
 Excluded metadata:
 
 - full ML training logs (optimizer history, checkpoints, random seeds, per-epoch losses),

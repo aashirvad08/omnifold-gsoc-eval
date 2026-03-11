@@ -31,39 +31,6 @@ class HistogramResult(dict[str, np.ndarray]):
         return iter((self["hist"], self["edges"], self["uncertainty"]))
 
 
-def _validate_and_build_edges(
-    values: np.ndarray,
-    bins: int | Sequence[float] | str,
-    hist_range: tuple[float, float] | None,
-) -> np.ndarray:
-    """Validate bin specification and return histogram edges."""
-    if isinstance(bins, str):
-        if bins != "auto":
-            raise ValueError("`bins` as string is only supported for bins='auto'.")
-        return np.asarray(
-            np.histogram_bin_edges(values, bins="auto", range=hist_range),
-            dtype=float,
-        )
-
-    if np.isscalar(bins):
-        n_bins = int(bins)
-        if n_bins <= 0:
-            raise ValueError("`bins` must be a positive integer.")
-        return np.asarray(
-            np.histogram_bin_edges(values, bins=n_bins, range=hist_range),
-            dtype=float,
-        )
-
-    edges = np.asarray(bins, dtype=float)
-    if edges.ndim != 1 or edges.size < 2:
-        raise ValueError("Explicit `bins` must be a 1D array with at least 2 edges.")
-    if not np.all(np.isfinite(edges)):
-        raise ValueError("Explicit `bins` contain non-finite values.")
-    if not np.all(np.diff(edges) > 0.0):
-        raise ValueError("Explicit `bins` must be strictly increasing.")
-    return edges
-
-
 def compute_weighted_histogram(
     values: ArrayLike,
     weights: ArrayLike | None = None,
@@ -71,7 +38,11 @@ def compute_weighted_histogram(
     hist_range: tuple[float, float] | None = None,
     density: bool = False,
 ) -> HistogramResult:
-    """Compute a weighted histogram with statistical uncertainties.
+    """Core function for computing weighted histograms of observables using per-event OmniFold weights: computing weighted histograms of observables using per-event weights.
+
+    This is the primary, self-contained analysis function. Plotting is provided
+    separately via ``plot_weighted_histogram`` as an optional convenience
+    wrapper.
 
     Parameters
     ----------
@@ -123,7 +94,31 @@ def compute_weighted_histogram(
     if values_arr.size == 0:
         raise ValueError("No finite entries remain after filtering NaN/Inf values.")
 
-    edges = _validate_and_build_edges(values_arr, bins=bins, hist_range=hist_range)
+    # Bin validation is kept inside this function so the computation path is
+    # self-contained for the coding exercise.
+    if isinstance(bins, str):
+        if bins != "auto":
+            raise ValueError("`bins` as string is only supported for bins='auto'.")
+        edges = np.asarray(
+            np.histogram_bin_edges(values_arr, bins="auto", range=hist_range),
+            dtype=float,
+        )
+    elif np.isscalar(bins):
+        n_bins = int(bins)
+        if n_bins <= 0:
+            raise ValueError("`bins` must be a positive integer.")
+        edges = np.asarray(
+            np.histogram_bin_edges(values_arr, bins=n_bins, range=hist_range),
+            dtype=float,
+        )
+    else:
+        edges = np.asarray(bins, dtype=float)
+        if edges.ndim != 1 or edges.size < 2:
+            raise ValueError("Explicit `bins` must be a 1D array with at least 2 edges.")
+        if not np.all(np.isfinite(edges)):
+            raise ValueError("Explicit `bins` contain non-finite values.")
+        if not np.all(np.diff(edges) > 0.0):
+            raise ValueError("Explicit `bins` must be strictly increasing.")
 
     hist, _ = np.histogram(values_arr, bins=edges, weights=weights_arr, density=False)
     sumw2, _ = np.histogram(
@@ -173,7 +168,7 @@ def plot_weighted_histogram(
     show_errors: bool = True,
     xlabel: str = "Observable",
 ) -> tuple[Figure, Axes, np.ndarray, np.ndarray, np.ndarray]:
-    """Plot a weighted histogram and return plot + arrays.
+    """Optional convenience wrapper around ``compute_weighted_histogram``.
 
     This function preserves the legacy return format:
     ``(fig, ax, hist, edges, uncertainty)``.
