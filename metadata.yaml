@@ -119,14 +119,21 @@ weights:
     - "multifold_nonDY.h5 provides only weight_mc and weights_nominal."
 
 normalization:
-  luminosity: "unknown"
-  cross_section: "unknown"
+  luminosity: "not stored in file"
+  cross_section: "not stored in file"
   event_weights_normalized: true
-  note: "Absolute normalization inputs are not documented in-file."
+  note: >
+    weight_mc is present in all files and likely encodes the MC generator
+    weight including cross-section and luminosity scaling. However, the
+    absolute normalization inputs (integrated luminosity and cross-section)
+    are not stored in-file and must be taken from the analysis configuration.
 
 event_selection:
-  description: "Selection criteria not provided in files"
-  note: "Selection cuts must be documented for reproducibility."
+  description: "not documented in files"
+  inferred_phase_space: >
+    Based on observable content (pT_ll, track-jet kinematics, lepton pT/eta),
+    the selection appears consistent with a Z+jets fiducial region requiring
+    two leptons and at least one track-jet. Exact cut values are not stored.
 
 training:
   algorithm: "OmniFold"

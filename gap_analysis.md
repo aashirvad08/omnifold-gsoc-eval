@@ -62,10 +62,14 @@ The three files differ substantially in weight information:
 - **Concrete column summary**
 
 | File | Events | Observable Columns | Weight Columns | Metadata Columns |
-|---|---:|---|---|---|
-| `multifold.h5` | 418,014 | 24 shared physics observables (`pT_ll`, `pT_l1`, ..., `Ntracks_trackj2`) | ~175 (`weight_mc`, `weights_nominal`, `weights_ensemble_*`, `weights_bootstrap_mc_*`, `weights_bootstrap_data_*`, detector/theory families) | `target_dd` (plus standard row index metadata in HDF layout) |
-| `multifold_sherpa.h5` | 326,430 | Same 24 core observables | ~27 (`weight_mc`, `weights_nominal`, `weights_bootstrap_mc_*`) | No explicit `target_dd`; only structural HDF metadata |
-| `multifold_nonDY.h5` | 433,397 | Same 24 core observables | 2 (`weight_mc`, `weights_nominal`) | No explicit `target_dd`; only structural HDF metadata |
+|---|---:|---:|---:|---|
+| `multifold.h5` | 418,014 | 24 | ~175 | `target_dd` |
+| `multifold_sherpa.h5` | 326,430 | 24 | ~27 | none |
+| `multifold_nonDY.h5` | 433,397 | 24 | 2 | none |
+
+Observable columns are identical across all files. The weight column counts
+differ significantly, with only `multifold.h5` providing full uncertainty
+replica families.
 
 - `multifold.h5` has the richest set (nominal, ensemble replicas, MC/data bootstraps, and many detector/theory weights).
 - `multifold_sherpa.h5` keeps a smaller subset (nominal plus MC bootstrap replicas).

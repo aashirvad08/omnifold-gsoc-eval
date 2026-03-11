@@ -38,11 +38,12 @@ def compute_weighted_histogram(
     hist_range: tuple[float, float] | None = None,
     density: bool = False,
 ) -> HistogramResult:
-    """Core function for computing weighted histograms of observables using per-event OmniFold weights: computing weighted histograms of observables using per-event weights.
+    """Compute a weighted histogram of an observable using per-event OmniFold weights.
 
-    This is the primary, self-contained analysis function. Plotting is provided
-    separately via ``plot_weighted_histogram`` as an optional convenience
-    wrapper.
+    This is the main analysis function. It handles bin validation, NaN/Inf filtering,
+    uncertainty estimation, and optional density normalization.
+
+    Plotting is available separately via plot_weighted_histogram.
 
     Parameters
     ----------
@@ -94,8 +95,8 @@ def compute_weighted_histogram(
     if values_arr.size == 0:
         raise ValueError("No finite entries remain after filtering NaN/Inf values.")
 
-    # Bin validation is kept inside this function so the computation path is
-    # self-contained for the coding exercise.
+    # Bin validation is inlined here to keep the computation path in one place,
+    # making the function easier to read and audit.
     if isinstance(bins, str):
         if bins != "auto":
             raise ValueError("`bins` as string is only supported for bins='auto'.")
