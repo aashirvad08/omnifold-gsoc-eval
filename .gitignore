@@ -7,3 +7,6 @@ __pycache__/
 
 # data files
 data/*.h5
+
+# generated artifacts
+artifacts/
