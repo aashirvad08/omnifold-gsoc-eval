@@ -133,6 +133,44 @@ reproducibility/     → training + models (optional)
 - dataset provenance (generator, tune, simulation, selection)
 - schema version + compatibility policy
 - file hashes + software versions
+  
+**Example manifest:**
+```yaml
+format_version: "0.1"
+
+analysis:
+  name: "ATLAS Z+jets OmniFold example"
+  process: "pp -> Z/gamma* + jets -> l+l- + jets"
+  sqrt_s: "13 TeV"
+  dataset: "Run 2 pseudodata"
+  observable: "pT_ll"
+
+storage:
+  events_file: "events.parquet"
+  event_count: 418014
+
+weights:
+  nominal:
+    column: "weights_nominal"
+    formula: "weight_mc * weights_nominal"
+    iteration: 4
+    step: "truth"
+  generator_choice:
+    column: "weights_generator_choice"
+    reference: "Sherpa"
+
+normalization:
+  mode: "shape"
+  base_weight_column: "weight_mc"
+  nominal_sumw: 418014.0
+
+provenance:
+  generator: "Pythia8"
+  tune: "CP5"
+  software:
+    omnifold_version: "0.3"
+    python: "3.11"
+```
 
 **Rules:**
 - final truth-level nominal weight = required publication object
@@ -175,24 +213,6 @@ versioning, and interoperability with the scientific Python ecosystem.
 
 ---
 
-## User-Facing API (Proposed)
-```python
-# Example of the proposed user-facing API
-from omnifold_publication import load_package
-from weighted_histogram import weighted_histogram
-
-pkg = load_package("artifacts/demo_nominal/")
-df = pkg.load_events(columns=["pT_ll"])
-weights = pkg.get_weights(variation="nominal")
-
-hist, edges = weighted_histogram(df["pT_ll"], weights, bins=50)
-```
-
-A user who did not run the original analysis can open a published package, inspect metadata,
-select a weight family by name, and compute a reference histogram in under ten lines.
-
----
-
 ## Systematics and Iterations
 
 **Systematics types:**
@@ -200,6 +220,24 @@ select a weight family by name, and compute a reference histogram in under ten l
 - statistical replicas
 - model ensembles
 - alternative samples (non-aligned)
+
+**Systematics usage example:**
+```python
+import numpy as np
+from omnifold_publication import load_package
+from weighted_histogram import weighted_histogram
+
+pkg = load_package("artifacts/zjets_nominal")
+pkg.validate()
+
+df = pkg.load_events(columns=["pT_ll"])
+bins = np.linspace(0.0, 150.0, 31)
+
+nominal = weighted_histogram(df["pT_ll"], pkg.get_weights("nominal"), bins=bins)
+generator_choice = weighted_histogram(df["pT_ll"], pkg.get_weights("generator_choice"), bins=bins)
+
+uncertainty_band = np.abs(generator_choice["hist"] - nominal["hist"])
+```
 
 **Rules:**
 - aligned variations → one-to-one event mapping
@@ -239,6 +277,19 @@ select a weight family by name, and compute a reference histogram in under ten l
 - schema compliance
 - alignment + integrity checks
 - normalization + closure
+  
+**Validation example:**
+```python
+from omnifold_publication import load_package
+
+pkg = load_package("artifacts/zjets_nominal")
+pkg.validate()  # raises with descriptive message if schema, alignment, or normalization fails
+
+df = pkg.load_events(columns=["pT_ll"])
+w = pkg.get_weights(variation="nominal")
+
+print(f"Loaded {len(df)} events — weight sum: {w.sum():.2f}")
+```
 
 **Workflow**
 - end-to-end example (export → reload → reproduce results)
