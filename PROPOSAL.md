@@ -6,28 +6,10 @@
 
 ## Why Me?
 
-My work in Scikit-HEP Awkward Array has focused on solving core challenges in schema stability,
-backend-agnostic data representation, and reproducible serialization across CPU/GPU environments.
-I have implemented byte-order handling across NumPy, CuPy, and JAX, ensured schema-consistent
-round-trip guarantees, and extended GPU interoperability with cuDF while enforcing explicit buffer
-ownership. This experience with iteration-aware serialization directly informs how I would handle
-OmniFold's per-iteration weight semantics and step metadata in the publication schema.
-
-I approach this problem from a data systems perspective, with a strong focus on how scientific
-outputs can be structured for long-term reuse and reinterpretation. My experience working with
-Arrow-backed columnar models and zero-copy semantics is particularly relevant for designing
-scalable storage formats for OmniFold weights that remain interoperable across scientific Python
-ecosystems.
-
-I also have research experience as a co-author at IEEE MoSICom 2025, with ongoing work under
-review at the IEEE Open Journal of the Computer Society. Through this, I have developed an
-understanding of how to structure, document, and communicate complex systems for a broader
-scientific audience, which is directly relevant to defining publication standards for OmniFold
-outputs.
-
-I see this project not just as an implementation task, but as an opportunity to define a standard
-for publishing ML-based scientific results, and my experience in data systems, scientific
-serialization, and research-driven development positions me to contribute effectively to this goal.
+I have contributed directly to the OmniFold codebase, fixing TensorFlow/Keras compatibility for modern versions and confirming finite weights locally. This gives me working familiarity with how OmniFold produces its outputs and where the serialization layer is absent.
+My broader work in Scikit-HEP Awkward Array has focused on schema stability, backend-agnostic data representation, and reproducible serialization across CPU/GPU environments, implementing byte-order handling across NumPy, CuPy, and JAX, and extending GPU interoperability with cuDF. This experience with iteration-aware serialization directly informs how I would handle OmniFold's per-iteration weight semantics and step metadata in the publication schema.
+I also have research experience as a co-author at IEEE MoSICom 2025, with ongoing work under review at the IEEE Open Journal of the Computer Society. Defining what gets published, what metadata is required, and how results are structured for reuse is exactly the kind of problem I have worked through in a research context  which maps directly onto designing a publication standard for OmniFold outputs.
+I see this project not just as an implementation task but as an opportunity to define a standard for publishing ML-based scientific results, and my experience across open-source HEP software, scientific serialization, and research-driven development positions me to contribute effectively to this goal.
 
 ---
 
@@ -59,6 +41,15 @@ Current outputs (NumPy arrays, HDF5) lack:
 - clear iteration/step semantics
 - structured uncertainty representation
 - sufficient metadata for reuse
+
+This is not a hypothetical concern. The original OmniFold paper (Andreassen et al., PRL 124,
+182001, 2020) defines the publication object as a set of generated events with learned weights
+but specifies no format, schema, or packaging standard for either. The authors deposited input
+jet datasets on Zenodo but not the learned per-event weights, iteration metadata, or normalization
+contract. Reproducing the exact detector-to-truth reweighting therefore requires reconstructing
+the training environment rather than reloading a published artifact. The subsequent release of
+OmniFold weights for a CMS Open Data study as a separate standalone dataset two years later
+confirms that the community recognized this gap and addressed it ad hoc, without a shared standard.
 
 The core problem is to convert these into a self-describing, versioned package that can be reused
 without the original analysis.
@@ -225,7 +216,6 @@ versioning, and interoperability with the scientific Python ecosystem.
 ```python
 import numpy as np
 from omnifold_publication import load_package
-from spec.weighted_histogram import compute_weighted_histogram as weighted_histogram
 
 pkg = load_package("artifacts/zjets_nominal")
 pkg.validate()
@@ -233,10 +223,10 @@ pkg.validate()
 df = pkg.load_events(columns=["pT_ll"])
 bins = np.linspace(0.0, 150.0, 31)
 
-nominal = weighted_histogram(df["pT_ll"], pkg.get_weights("nominal"), bins=bins)
-generator_choice = weighted_histogram(df["pT_ll"], pkg.get_weights("generator_choice"), bins=bins)
+nominal, _    = np.histogram(df["pT_ll"], bins=bins, weights=pkg.get_weights("nominal"))
+gen_choice, _ = np.histogram(df["pT_ll"], bins=bins, weights=pkg.get_weights("generator_choice"))
 
-uncertainty_band = np.abs(generator_choice["hist"] - nominal["hist"])
+uncertainty_band = np.abs(gen_choice - nominal)
 ```
 
 **Rules:**
@@ -359,7 +349,7 @@ and one uncertainty family. Everything beyond that is extensibility.
 - *Artifact: package support for iterations plus one uncertainty family + alignment tests*
 
 **Midterm**
--A complete minimal publication package supporting nominal weights, metadata schema, validation, and end-to-end reproducibility workflow.
+- A complete minimal publication package supporting nominal weights, metadata schema, validation, and end-to-end reproducibility workflow. Scope and priorities reviewed with        mentors before proceeding.
 
 **Weeks 7–8**
 - Implement the user-facing API for loading weights and applying them to observables
@@ -374,9 +364,10 @@ and one uncertainty family. Everything beyond that is extensibility.
 - *Artifact: complete end-to-end example package and reproducible tutorial + full test suite*
 
 **Final Phase**
-- Incorporate mentor feedback, finalize documentation, and prepare final report
+- Incorporate mentor feedback and finalize documentation
+- This phase explicitly serves as schedule buffer for integration surprises in weeks 7–10, where real OmniFold outputs are most likely to surface edge cases not present in the      evaluation pseudo-data
 - HEPData integration pursued as stretch if time permits
-- *Artifact: final package, documentation, and HEPData integration prototype*
+- *Artifact: final package, documentation, and HEPData integration prototype if stretch is reached*
 
 ---
 
@@ -448,20 +439,20 @@ and one uncertainty family. Everything beyond that is extensibility.
 
 During the evaluation task I built `omnifold_publication`, a working prototype implementing the
 write/read/validate pipeline on the provided pseudo-data. It writes Parquet-based publication
-packages, validates schema compliance and event-count integrity, and passes 15 tests covering
+packages, validates schema compliance and event-count integrity, and passes 17 tests in 5.94s covering
 roundtrip correctness and validation failures. A key finding was the undocumented asymmetry
 across the three files — 175 weight columns in the nominal file versus 2 in the nonDY variation
 — which directly motivated the systematic weight taxonomy proposed here.
 ```python
 # Example of the proposed user-facing API
+import numpy as np
 from omnifold_publication import load_package
-from spec.weighted_histogram import compute_weighted_histogram as weighted_histogram
 
 pkg = load_package("artifacts/demo_nominal/")
 df = pkg.load_events(columns=["pT_ll"])
 weights = pkg.get_weights(variation="nominal")
 
-hist, edges = weighted_histogram(df["pT_ll"], weights, bins=50)
+hist, edges = np.histogram(df["pT_ll"], bins=50, weights=weights)
 ```
 
 Code available at: https://github.com/X0708a/omnifold-gsoc-eval
@@ -470,12 +461,9 @@ Code available at: https://github.com/X0708a/omnifold-gsoc-eval
 
 ## Progress Monitoring
 
-I will maintain a structured work log and provide regular progress updates through GitHub issues,
-pull requests, and mentor communication channels. I will schedule check-ins at least 2–3 times
-per week to review progress, discuss blockers, and validate design decisions. Major milestones,
-including the schema, package format, API, validation tools, and example workflow, will be tracked
-through GitHub to ensure transparency and steady delivery. Key technical decisions and results
-will be documented through concise design notes and periodic technical write-ups.
+I will maintain a structured work log and provide regular progress updates through GitHub issues, pull requests, and mentor communication channels. 
+I will default to async communication, with structured weekly progress notes via GitHub issues or a shared document, and synchronous check-ins scheduled as needed for design decisions or blockers at a cadence that fits the mentor's availability.
+Major milestones, including the schema, package format, API, validation tools, and example workflow, will be tracked through GitHub to ensure transparency and steady delivery. Key technical decisions and results will be documented through concise design notes and periodic technical write-ups.
 
 ---
 
@@ -518,4 +506,4 @@ ML-based unfolding results in high-energy physics.
 ---
 
 I confirm that I will be fully available during the GSoC 2026 coding period (June–September 2026)
-and will dedicate a minimum of 40 hours per week to this project.
+and will dedicate a minimum of 20 hours per week to this project.
