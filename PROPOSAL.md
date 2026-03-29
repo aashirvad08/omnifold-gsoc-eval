@@ -455,7 +455,7 @@ weights = pkg.get_weights(variation="nominal")
 hist, edges = np.histogram(df["pT_ll"], bins=50, weights=weights)
 ```
 
-Code available at: https://github.com/X0708a/omnifold-gsoc-eval
+Code available at: https://github.com/aashirvad08/omnifold-gsoc-eval
 
 ---
 
